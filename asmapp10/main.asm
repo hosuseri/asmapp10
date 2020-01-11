@@ -78,7 +78,6 @@ ramclr:
 	bld	r0, OCIE0A
 	st	x, r0
 	;;
-	;;
 	;; Z has systicks
 	ldi	r30, LOW(systicks)
 	ldi	r31, HIGH(systicks)
@@ -153,7 +152,6 @@ ramclr:
 	std	z + c_spl, r16
 	ldi	r16, HIGH(stack2)
 	std	z + c_sph, r16
-	
 	;;
 	ldi	r30, LOW(context0)
 	ldi	r31, HIGH(context0)
