@@ -35,6 +35,7 @@ start:
 	ldi r16, HIGH(RAMEND)
 	out SPH, r16
 	;; 
+	;; disable SPI
 	out SPCR, r2
 	;;
 	ldi r30, LOW(RAMSTART)
@@ -84,13 +85,12 @@ ramclr:
 	bld r0, OCIE0A
 	st x, r0
 	;;
-	;; enable interrupt
-	sei
-	;;
 	;; Z has systicks
 	ldi r30, LOW(systicks)
 	ldi r31, HIGH(systicks)
-	;;
+	;; 
+	;; for testing
+#if 0
 	ldi r16, 9
 	mov r0, r16
 	ldi r16, 8
@@ -114,9 +114,9 @@ ramclr:
 	ldi r16, 1
 	mov r1, r16
 	rcall emit_light
-	;; 
-	;; for testing
+#endif
 #if 0
+	;;
 	ldi r16, 0x71
 	std z+8, r16
 	ldi r16, 0x51
@@ -124,6 +124,9 @@ ramclr:
 	ldi r16, 0x01
 	std z+10, r16
 #endif
+	;;
+	;; enable interrupt
+	sei
 	;; 
 	ldi r24, 8
 	mov r25, r2
