@@ -1,6 +1,4 @@
-;
-; asmapp10.asm
-;
+	.INCLUDE "contextdef.asm"
 
 /* Fuse Settings
  * EXTENDED 0xFF
@@ -18,24 +16,21 @@
 
 #define RAMSIZE (RAMEND + 1 - RAMSTART)
 
+	.EQU	stack0 = RAMEND
+	.EQU 	stack1 = stack0 - 128
+	.EQU	stack2 = stack1 - 128
+
 	.CSEG
 	.ORG 0
 	jmp start
 	.ORG 0x001c
-	jmp tim0_mat
+	jmp timer0_match
 ;;;
 	.ORG 0x0034
 start:
 	clr r2
 	mov r3, r2
 	inc r3
-	;;
-	ldi r16, LOW(RAMEND)
-	out SPL, r16
-	ldi r16, HIGH(RAMEND)
-	out SPH, r16
-	;; 
-	out SPCR, r2
 	;;
 	ldi r30, LOW(RAMSTART)
 	ldi r31, HIGH(RAMSTART)
@@ -48,6 +43,9 @@ ramclr:
 	mov r0, r16
 	or r0, r17
 	brne ramclr
+	;; 
+	;; disable SPI
+	out SPCR, r2
 	;; 
 	;; setting-up clock pre-scaler
 	ldi r26, LOW(CLKPR)
@@ -84,124 +82,198 @@ ramclr:
 	bld r0, OCIE0A
 	st x, r0
 	;;
-	;; enable interrupt
-	sei
 	;;
 	;; Z has systicks
 	ldi r30, LOW(systicks)
 	ldi r31, HIGH(systicks)
+;;;
+#if 0	/* for testing */
+	ldi	r16, 0x71
+	std	z+8, r16
+	ldi	r16, 0x51
+	std	z+9, r16
+	ldi	r16, 0x01
+	std	z+10, r16
+#endif  /* for testing */
+;;;
+	ldi	r28, LOW(stack0)
+	ldi	r29, HIGH(stack0)
+	out	SPL, r28
+	out	SPH, r29
+	;; first stack frame
+	push	r29
+	push	r28
 	;;
-	ldi r16, 9
-	mov r0, r16
-	ldi r16, 8
-	mov r1, r16
-	rcall emit_light
+	push	r31
+	push	r30
+	ldi	r30, LOW(coroutine0)
+	ldi	r31, HIGH(coroutine0)
+	push	r31
+	push	r30
+	ldi	r30, LOW(context0)
+	ldi	r31, HIGH(context0)
+	call	init_context
+	ldi	r30, LOW(context0)
+	ldi	r31, HIGH(context0)
+	in	r0, SPL
+	std	z + c_spl, r0
+	in	r0, SPH
+	std	z + c_sph, r0
 	;;
-	ldi r16, 8
-	mov r0, r16
-	ldi r16, 4
-	mov r1, r16
-	rcall emit_light
+	;; Z has systicks
+	ldi	r30, LOW(systicks)
+	ldi	r31, HIGH(systicks)
+	push	r31
+	push	r30
+	mov	r0, r2
+	ldi	r30, LOW(coroutine1)
+	ldi	r31, HIGH(coroutine1)
+	push	r31
+	push	r30
+	ldi	r30, LOW(context1)
+	ldi	r31, HIGH(context1)
+	call	init_context
+	ldi	r30, LOW(context1)
+	ldi	r31, HIGH(context1)
+	ldi	r16, LOW(stack1)
+	std	z + c_spl, r16
+	ldi	r16, HIGH(stack1)
+	std	z + c_sph, r16
 	;;
-	ldi r16, 7
-	mov r0, r16
-	ldi r16, 2
-	mov r1, r16
-	rcall emit_light
+	;; Z has systicks
+	ldi	r30, LOW(systicks)
+	ldi	r31, HIGH(systicks)
+	push	r31
+	push	r30
+	ldi	r24, 8
+	mov	r25, r2
+	ldi	r30, LOW(coroutine2)
+	ldi	r31, HIGH(coroutine2)
+	push	r31
+	push	r30
+	ldi	r30, LOW(context2)
+	ldi	r31, HIGH(context2)
+	call	init_context
+	ldi	r30, LOW(context2)
+	ldi	r31, HIGH(context2)
+	ldi	r16, LOW(stack2)
+	std	z + c_spl, r16
+	ldi	r16, HIGH(stack2)
+	std	z + c_sph, r16
 	;;
-	ldi r16, 6
-	mov r0, r16
-	ldi r16, 1
-	mov r1, r16
-	rcall emit_light
-	;; 
-	;; for testing
-#if 0
-	ldi r16, 0x71
-	std z+8, r16
-	ldi r16, 0x51
-	std z+9, r16
-	ldi r16, 0x01
-	std z+10, r16
-#endif
-	;; 
-	ldi r24, 8
-	mov r25, r2
-	clr r0
-	rjmp prn_tim
-wait_edge:
-	ld r16, z
-	cp r16, r25
-	breq wait_edge
-wait_edge_10:
-	mov r25, r16
-	andi r16, 3
-	brne wait_edge_20
-	sbrc r24, 3
-	ldd r0, z+15
-	sbrc r24, 2
-	ldd r0, z+14
-	sbrc r24, 1
-	ldd r0, z+13
-	sbrc r24, 0
-	ldd r0, z+12
-	mov r1, r24 
-	rcall emit_light
-	lsr r24
-	brcc wait_edge_20
-	ldi r24, 8
-wait_edge_20:
-	ldd r0, z+11
-	cp r0, r14
-	breq wait_edge
+	ldi	r30, LOW(context0)
+	ldi	r31, HIGH(context0)
+	jmp	restore_context
 	;;
+coroutine0:
+	ldi	r30, LOW(context1)
+	ldi	r31, HIGH(context1)
+	jmp	restore_context
+;;;
+coroutine1:
 prn_tim:
-	mov r14, r0
+	mov	r14, r0
 	cli
-	ldd r8, z+8
-	ldd r9, z+9
-	ldd r10, z+10
+	ldd	r8, z+8
+	ldd	r9, z+9
+	ldd	r10, z+10
 	sei
 	;;
-	ldi r16, 60
-	mov r4, r16
-	rcall udiv2408
-	std z+12, r0
+	ldi	r16, 60
+	mov	r4, r16
+	rcall	udiv2408
+	std	z+12, r0
 	;; 
-	ldi r16, 60
-	mov r4, r16
-	rcall udiv2408
-	std z+14, r0
+	ldi	r16, 60
+	mov	r4, r16
+	rcall	udiv2408
+	std	z+14, r0
 	;;
-	ldi r16, 24
-	mov r4, r16
-	rcall udiv1608
-	std z+16, r0
+	ldi	r16, 24
+	mov	r4, r16
+	rcall	udiv1608
+	std	z+16, r0
 	;;
-	ldd r8, z+12
-	ldi r16, 10
-	mov r4, r16
-	call udiv0808
-	std z+12, r0
-	std z+13, r8
+	ldd	r8, z+12
+	ldi	r16, 10
+	mov	r4, r16
+	call	udiv0808
+	std	z+12, r0
+	std	z+13, r8
 	;;
-	ldd r8, z+14
-	ldi r16, 10
-	mov r4, r16
-	call udiv0808
-	std z+14, r0
-	std z+15, r8
+	ldd	r8, z+14
+	ldi	r16, 10
+	mov	r4, r16
+	call	udiv0808
+	std	z+14, r0
+	std	z+15, r8
 	;;
-	ldd r8, z+16
-	ldi r16, 10
-	mov r4, r16
-	call udiv0808
-	std z+16, r0
-	std z+17, r8
+	ldd	r8, z+16
+	ldi	r16, 10
+	mov	r4, r16
+	call	udiv0808
+	std	z+16, r0
+	std	z+17, r8
 	;;
-	rjmp wait_edge
+	push	r31
+	push	r30
+	ldi	r30, LOW(coroutine1)
+	ldi	r31, HIGH(coroutine1)
+	push	r31
+	push	r30
+	ldi	r30, LOW(context1)
+	ldi	r31, HIGH(context1)
+	cli
+	call	save_context
+	ldi	r30, LOW(context2)
+	ldi	r31, HIGH(context2)
+	jmp	restore_context
+;;; 
+coroutine2:
+	sei
+wait_edge:
+	ld	r16, z
+	cp	r16, r25
+	breq	wait_edge
+wait_edge_10:
+	mov	r25, r16
+	andi	r16, 3
+	brne	wait_edge_20
+	sbrc	r24, 3
+	ldd	r0, z+15
+	sbrc	r24, 2
+	ldd	r0, z+14
+	sbrc	r24, 1
+	ldd	r0, z+13
+	sbrc	r24, 0
+	ldd	r0, z+12
+	mov	r1, r24 
+	rcall	emit_light
+	lsr	r24
+	brcc	wait_edge_20
+	ldi	r24, 8
+wait_edge_20:
+	ldd	r0, z+11
+	cp	r0, r14
+	breq	wait_edge
+	mov	r14, r0
 	;;
-tim0_mat:
+	push	r31
+	push	r30
+	ldi	r30, LOW(coroutine2)
+	ldi	r31, HIGH(coroutine2)
+	push	r31
+	push	r30
+	ldi	r30, LOW(context2)
+	ldi	r31, HIGH(context2)
+	cli
+	call	save_context
+	ldi	r30, LOW(context1)
+	ldi	r31, HIGH(context1)
+	jmp	restore_context
+;;;
+;;;
+timer0_match:
 	push r0
 	in r0, SREG
 	push r0
@@ -212,7 +284,7 @@ tim0_mat:
 	ldi r30, LOW(systicks)
 	ldi r31, HIGH(systicks)
 	;;
-tim0_mat10:
+timer0_match10:
 	ld r0, z
 	add r0, r3
 	st z+, r0
@@ -239,7 +311,7 @@ tim0_mat10:
 	ld r0, z
 	adc r0, r2
 	st z+, r0
-	brcc tim0_mat_30
+	brcc timer0_match_30
 	;;
 	ld r0, z
 	add r0, r3
@@ -257,7 +329,7 @@ tim0_mat10:
 	std z+3, r0
 	out PORTB, r0
 	;;
-tim0_mat_30:
+timer0_match_30:
 	pop r30
 	pop r31
 	pop r16
@@ -375,12 +447,21 @@ emit_light_10:
 	pop r31
 	ret
 ;;;
+	.INCLUDE "context.asm"
+;;;
 seven_seg:
 	.DB 0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x27
 	.DB 0x7f, 0x6f, 0x77, 0x7c, 0x39, 0x5e, 0x79, 0x71
 ;;;
 	.DSEG
 	.ORG RAMSTART
+context0:
+	.BYTE c_size
+context1:
+	.BYTE c_size
+context2:
+	.BYTE c_size
+;;;
 systicks:
 	.BYTE 6
 	.BYTE 2
