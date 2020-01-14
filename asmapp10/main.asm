@@ -16,10 +16,6 @@
 
 #define RAMSIZE (RAMEND + 1 - RAMSTART)
 
-	.EQU	stack0 = RAMEND
-	.EQU 	stack1 = stack0 - 128
-	.EQU	stack2 = stack1 - 128
-
 	.CSEG
 	.ORG 0
 	jmp start
@@ -119,6 +115,9 @@ ramclr:
 	std	z + c_spl, r0
 	in	r0, SPH
 	std	z + c_sph, r0
+	ldd	r16, z + c_sreg
+	ori	r16, 0x80
+	std	z + c_sreg, r16
 	;;
 	;; Z has systicks
 	ldi	r30, LOW(systicks)
@@ -139,6 +138,9 @@ ramclr:
 	std	z + c_spl, r16
 	ldi	r16, HIGH(stack1)
 	std	z + c_sph, r16
+	ldd	r16, z + c_sreg
+	ori	r16, 0x80	; sei
+	std	z + c_sreg, r16
 	;;
 	;; Z has systicks
 	ldi	r30, LOW(systicks)
@@ -160,6 +162,10 @@ ramclr:
 	std	z + c_spl, r16
 	ldi	r16, HIGH(stack2)
 	std	z + c_sph, r16
+	ldd	r16, z + c_sreg
+	ori	r16, 0x80	; sei
+	std	z + c_sreg, r16
+	
 	;;
 	ldi	r30, LOW(context0)
 	ldi	r31, HIGH(context0)
@@ -172,7 +178,6 @@ coroutine0:
 ;;;
 coroutine1:
 prn_tim:
-	mov	r14, r0
 	cli
 	ldd	r8, z+8
 	ldd	r9, z+9
@@ -223,14 +228,13 @@ prn_tim:
 	push	r30
 	ldi	r30, LOW(context1)
 	ldi	r31, HIGH(context1)
-	cli
 	call	save_context
 	ldi	r30, LOW(context2)
 	ldi	r31, HIGH(context2)
 	jmp	restore_context
 ;;; 
 coroutine2:
-	sei
+	mov	r14, r0
 wait_edge:
 	ld	r16, z
 	cp	r16, r25
@@ -260,13 +264,12 @@ wait_edge_20:
 	;;
 	push	r31
 	push	r30
-	ldi	r30, LOW(coroutine2)
-	ldi	r31, HIGH(coroutine2)
+	ldi	r30, LOW(wait_edge)
+	ldi	r31, HIGH(wait_edge)
 	push	r31
 	push	r30
 	ldi	r30, LOW(context2)
 	ldi	r31, HIGH(context2)
-	cli
 	call	save_context
 	ldi	r30, LOW(context1)
 	ldi	r31, HIGH(context1)
@@ -469,3 +472,13 @@ seconds:
 	.BYTE 4
 minsec:
 	.BYTE 6			; sec., min., hour
+
+	.BYTE	64
+stack2:
+	.ORG	0x77f
+	.BYTE	64
+stack1:
+	.ORG	0x7bf
+	.BYTE	64
+stack0:
+	.ORG	0x7ff

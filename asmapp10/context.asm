@@ -29,37 +29,11 @@ save_context:
 	pop	r0
 	std	z + c_r31, r0
 	;;
+	cli
 	in	r0, SPL
 	std	z + c_spl, r0
 	in	r0, SPH
 	std	z + c_sph, r0
-	;; restore the return
-	push	r29
-	push	r28
-	;;
-	rjmp	save_gregs
-;;; 
-init_context:
-	std	z + c_r0, r0
-	in	r0, SREG
-	std	z + c_sreg, r0
-	std	z + c_r28, r28
-	std	z + c_r29, r29
-	;; return
-	pop	r28
-	pop	r29
-	;; continue
-	pop	r0
-	std	z + c_pcl, r0
-	pop	r0
-	std	z + c_pch, r0
-	;; r30
-	pop	r0
-	std	z + c_r30, r0
-	;; r31
-	pop	r0
-	std	z + c_r31, r0
-	;;
 	;; restore the return
 	push	r29
 	push	r28
@@ -95,6 +69,33 @@ save_gregs:
 	st	z+, r26
 	st	z+, r27
 	ret
+;;; 
+init_context:
+	std	z + c_r0, r0
+	in	r0, SREG
+	std	z + c_sreg, r0
+	std	z + c_r28, r28
+	std	z + c_r29, r29
+	;; return
+	pop	r28
+	pop	r29
+	;; continue
+	pop	r0
+	std	z + c_pcl, r0
+	pop	r0
+	std	z + c_pch, r0
+	;; r30
+	pop	r0
+	std	z + c_r30, r0
+	;; r31
+	pop	r0
+	std	z + c_r31, r0
+	;;
+	;; restore the return
+	push	r29
+	push	r28
+	;;
+	rjmp	save_gregs
 
 ;;;
 ;;; r31:r30 = context
@@ -102,6 +103,7 @@ save_gregs:
 restore_context:
 	ldd	r28, z + c_spl
 	ldd	r29, z + c_sph
+	cli
 	out	SPL, r28
 	out	SPH, r29
 	;;
