@@ -134,9 +134,6 @@ ramclr:
 	std	z + c_spl, r16
 	ldi	r16, HIGH(stack1)
 	std	z + c_sph, r16
-	ldd	r16, z + c_sreg
-	ori	r16, 0x80	; sei
-	std	z + c_sreg, r16
 	;;
 	;; Z has systicks
 	ldi	r30, LOW(systicks)
@@ -156,9 +153,6 @@ ramclr:
 	std	z + c_spl, r16
 	ldi	r16, HIGH(stack2)
 	std	z + c_sph, r16
-	ldd	r16, z + c_sreg
-	ori	r16, 0x80	; sei
-	std	z + c_sreg, r16
 	
 	;;
 	ldi	r30, LOW(context0)
@@ -166,17 +160,16 @@ ramclr:
 	jmp	restore_context
 	;;
 coroutine0:
-	ldi	r30, LOW(context1)
-	ldi	r31, HIGH(context1)
-	jmp	restore_context
+	sei
+coroutine0_1:	
+	rjmp	coroutine0_1
 ;;;
 coroutine1:
-prn_tim:
 	cli
+coroutine1_1:
 	ldd	r8, z+8
 	ldd	r9, z+9
 	ldd	r10, z+10
-	sei
 	;;
 	ldi	r16, 60
 	mov	r4, r16
@@ -216,8 +209,8 @@ prn_tim:
 	;;
 	push	r31
 	push	r30
-	ldi	r30, LOW(coroutine1)
-	ldi	r31, HIGH(coroutine1)
+	ldi	r30, LOW(coroutine1_1)
+	ldi	r31, HIGH(coroutine1_1)
 	push	r31
 	push	r30
 	ldi	r30, LOW(context1)
@@ -228,15 +221,15 @@ prn_tim:
 	jmp	restore_context
 ;;; 
 coroutine2:
-	mov	r14, r0
-wait_edge:
+	cli
+	ldi	r24, 8
+coroutine2_1:	
 	ld	r16, z
 	cp	r16, r25
-	breq	wait_edge
-wait_edge_10:
+	breq	coroutine2_2
 	mov	r25, r16
 	andi	r16, 3
-	brne	wait_edge_20
+	brne	coroutine2_2
 	sbrc	r24, 3
 	ldd	r0, z+15
 	sbrc	r24, 2
@@ -248,25 +241,20 @@ wait_edge_10:
 	mov	r1, r24 
 	rcall	emit_light
 	lsr	r24
-	brcc	wait_edge_20
+	brcc	coroutine2_2
 	ldi	r24, 8
-wait_edge_20:
-	ldd	r0, z+11
-	cp	r0, r14
-	breq	wait_edge
-	mov	r14, r0
-	;;
+coroutine2_2:
 	push	r31
 	push	r30
-	ldi	r30, LOW(wait_edge)
-	ldi	r31, HIGH(wait_edge)
+	ldi	r30, LOW(coroutine2_1)
+	ldi	r31, HIGH(coroutine2_1)
 	push	r31
 	push	r30
 	ldi	r30, LOW(context2)
 	ldi	r31, HIGH(context2)
 	call	save_context
-	ldi	r30, LOW(context1)
-	ldi	r31, HIGH(context1)
+	ldi	r30, LOW(context0)
+	ldi	r31, HIGH(context0)
 	jmp	restore_context
 ;;;
 ;;;
@@ -326,6 +314,27 @@ timer0_match10:
 	std	z+3, r0
 	out	PORTB, r0
 	;;
+	pop	r30
+	pop	r31
+	pop	r16
+	pop	r1
+	pop	r0
+	out	SREG, r0
+	pop	r0
+	;;
+	push	r31
+	push	r30
+	ldi	r30, LOW(coroutine0)
+	ldi	r31, HIGH(coroutine0)
+	push	r31
+	push	r30
+	ldi	r30, LOW(context0)
+	ldi	r31, HIGH(context0)
+	call	save_context
+	ldi	r30, LOW(context1)
+	ldi	r31, HIGH(context1)
+	jmp	restore_context
+	;;
 timer0_match_30:
 	pop	r30
 	pop	r31
@@ -334,7 +343,20 @@ timer0_match_30:
 	pop	r0
 	out	SREG, r0
 	pop	r0
-	reti
+	;;
+	push	r31
+	push	r30
+	ldi	r30, LOW(coroutine0)
+	ldi	r31, HIGH(coroutine0)
+	push	r31
+	push	r30
+	ldi	r30, LOW(context0)
+	ldi	r31, HIGH(context0)
+	call	save_context
+	ldi	r30, LOW(context2)
+	ldi	r31, HIGH(context2)
+	jmp	restore_context
+
 	;;
 	;; R8 / R4
 	;; R8 <= quotient
