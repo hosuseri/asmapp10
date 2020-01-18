@@ -258,6 +258,8 @@ coroutine2_2:
 ;;;
 timer0_match:
 	push	r0
+	in	r0, SREG
+	push	r0
 	push	r1
 	push	r16
 	push	r31
@@ -315,6 +317,8 @@ timer0_match10:
 	pop	r16
 	pop	r1
 	pop	r0
+	out	SREG, r0
+	pop	r0
 	;;
 	push	r31
 	push	r30
@@ -334,6 +338,8 @@ timer0_match_30:
 	pop	r31
 	pop	r16
 	pop	r1
+	pop	r0
+	out	SREG, r0
 	pop	r0
 	;;
 	push	r31
