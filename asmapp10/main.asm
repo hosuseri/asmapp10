@@ -24,12 +24,18 @@
 ;;;
 	.ORG 0x0034
 start:
+	;; setting-up clock pre-scaler
+	ldi	r16, 1<<CLKPCE
+	ldi	r17, 0
+	sts	CLKPR, r16
+	sts	CLKPR, r17
+	;;
 	clr	r2
 	mov	r3, r2
 	inc	r3
 	;;
-	ldi	r30, LOW(RAMSTART)
-	ldi	r31, HIGH(RAMSTART)
+	ldi	r26, LOW(RAMSTART)
+	ldi	r27, HIGH(RAMSTART)
 	ldi	r16, LOW(RAMSIZE)
 	ldi	r17, HIGH(RAMSIZE)
 ramclr:
@@ -42,15 +48,6 @@ ramclr:
 	;; 
 	;; disable SPI
 	out	SPCR, r2
-	;; 
-	;; setting-up clock pre-scaler
-	ldi	r26, LOW(CLKPR)
-	ldi	r27, HIGH(CLKPR)
-	clr	r0
-	set
-	bld	r0, CLKPCE
-	st	x, r0
-	st	x, r2
 	;; 
 	;; setting-up PORTB direction
 	clr	r0
@@ -71,12 +68,10 @@ ramclr:
 	ldi	r16, 78
 	out	OCR0A, r16
 	;;
-	ldi	r26, LOW(TIMSK0)
-	ldi	r27, HIGH(TIMSK0)
 	clr	r0
-	;;
+	set
 	bld	r0, OCIE0A
-	st	x, r0
+	sts	TIMSK0, r0
 	;;
 	;; Z has systicks
 	ldi	r30, LOW(systicks)
