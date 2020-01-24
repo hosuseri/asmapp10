@@ -65,7 +65,7 @@ ramclr:
 	out	TCCR0A, r16
 	ldi	r16, (0<<WGM02) | (1<<CS02) | (0<<CS01) | (0<<CS00)
 	out	TCCR0B, r16
-	ldi	r16, 78
+	ldi	r16, 77
 	out	OCR0A, r16
 	;;
 	clr	r0
@@ -79,11 +79,11 @@ ramclr:
 ;;;
 #if 0	/* for testing */
 	ldi	r16, 0x71
-	std	z+8, r16
-	ldi	r16, 0x51
-	std	z+9, r16
-	ldi	r16, 0x01
 	std	z+10, r16
+	ldi	r16, 0x51
+	std	z+11, r16
+	ldi	r16, 0x01
+	std	z+12, r16
 #endif  /* for testing */
 ;;;
 	ldi	r28, LOW(stack0)
@@ -135,7 +135,6 @@ ramclr:
 	push	r31
 	push	r30
 	ldi	r24, 8
-	mov	r25, r2
 	ldi	r31, HIGH(coroutine2)
 	ldi	r30, LOW(coroutine2)
 	push	r31
@@ -160,38 +159,24 @@ coroutine0_1:
 coroutine1:
 	cli
 coroutine1_1:
-	ldd	r8, z+8
-	ldd	r9, z+9
-	ldd	r10, z+10
+	ldd	r8, z+10
+	ldd	r9, z+11
+	ldd	r10, z+12
 	;;
 	ldi	r16, 60
 	mov	r4, r16
 	rcall	udiv2408
-	std	z+12, r0
+	std	z+16, r0
 	;; 
 	ldi	r16, 60
 	mov	r4, r16
 	rcall	udiv2408
-	std	z+14, r0
+	std	z+18, r0
 	;;
 	ldi	r16, 24
 	mov	r4, r16
 	rcall	udiv1608
-	std	z+16, r0
-	;;
-	ldd	r8, z+12
-	ldi	r16, 10
-	mov	r4, r16
-	call	udiv0808
-	std	z+12, r0
-	std	z+13, r8
-	;;
-	ldd	r8, z+14
-	ldi	r16, 10
-	mov	r4, r16
-	call	udiv0808
-	std	z+14, r0
-	std	z+15, r8
+	std	z+20, r0
 	;;
 	ldd	r8, z+16
 	ldi	r16, 10
@@ -199,6 +184,20 @@ coroutine1_1:
 	call	udiv0808
 	std	z+16, r0
 	std	z+17, r8
+	;;
+	ldd	r8, z+18
+	ldi	r16, 10
+	mov	r4, r16
+	call	udiv0808
+	std	z+18, r0
+	std	z+19, r8
+	;;
+	ldd	r8, z+20
+	ldi	r16, 10
+	mov	r4, r16
+	call	udiv0808
+	std	z+20, r0
+	std	z+21, r8
 	;;
 	push	r31
 	push	r30
@@ -218,19 +217,16 @@ coroutine2:
 	ldi	r24, 8
 coroutine2_1:	
 	ld	r16, z
-	cp	r16, r25
-	breq	coroutine2_2
-	mov	r25, r16
 	andi	r16, 3
 	brne	coroutine2_2
 	sbrc	r24, 3
-	ldd	r0, z+15
+	ldd	r0, z+19
 	sbrc	r24, 2
-	ldd	r0, z+14
+	ldd	r0, z+18
 	sbrc	r24, 1
-	ldd	r0, z+13
+	ldd	r0, z+17
 	sbrc	r24, 0
-	ldd	r0, z+12
+	ldd	r0, z+16
 	mov	r1, r24 
 	rcall	emit_light
 	lsr	r24
@@ -257,58 +253,69 @@ timer0_match:
 	push	r0
 	push	r1
 	push	r16
-	push	r31
-	push	r30
-	ldi	r30, LOW(systicks)
-	ldi	r31, HIGH(systicks)
+	push	r27
+	push	r26
+	ldi	r26, LOW(systicks)
+	ldi	r27, HIGH(systicks)
 	;;
 timer0_match10:
-	ld	r0, z
+	ld	r0, x
 	add	r0, r3
-	st	z+, r0
-	ld	r0, z
+	st	x+, r0
+	ld	r0, x
 	adc	r0, r2
-	st	z+, r0
-	ld	r0, z
+	st	x+, r0
+	ld	r0, x
 	adc	r0, r2
-	st	z+, r0
-	ld	r0, z
+	st	x+, r0
+	ld	r0, x
 	adc	r0, r2
-	st	z+, r0
-	ld	r0, z
+	st	x+, r0
+	ld	r0, x
 	adc	r0, r2
-	st	z+, r0
-	ld	r0, z
+	st	x+, r0
+	ld	r0, x
 	adc	r0, r2
-	st	z+, r0
+	st	x+, r0
 	;;
-	ld	r0, z
-	ldi	r16, 66
+	ld	r0, x
+	ldi	r16, 0x60
 	add	r0, r16
-	st	z+, r0
-	ld	r0, z
+	st	x+, r0
+	ld	r0, x
+	ldi	r16, 0x6e
+	adc	r0, r16
+	st	x+, r0
+	ld	r0, x
+	ldi	r16, 0x41
+	adc	r0, r16
+	st	x+, r0
+	ld	r0, x
 	adc	r0, r2
-	st	z+, r0
+	st	x+, r0
 	brcc	timer0_match_30
 	;;
-	ld	r0, z
+	ld	r0, x
 	add	r0, r3
-	st	z, r0
-	ldd	r0, z+1
+	st	x+, r0
+	ld	r0, x
 	adc	r0, r2
-	std	z+1, r0
-	ldd	r0, z+2
+	st	x+, r0
+	ld	r0, x
 	adc	r0, r2
-	std	z+2, r0
+	st	x+, r0
+	ld	r0, x
+	adc	r0, r2
+	st	x+, r0
 	;;
-	ldd	r0, z+3
+	ld	r0, x
 	ldi	r16, 1<<DDB5
 	eor	r0, r16
-	std	z+3, r0
+	st	x+, r0
 	out	PORTB, r0
 	;;
-	pop	r30
-	pop	r31
+	pop	r26
+	pop	r27
 	pop	r16
 	pop	r1
 	pop	r0
@@ -476,9 +483,10 @@ context2:
 ;;;
 systicks:
 	.BYTE	6
-	.BYTE	2
+	.BYTE	4
 seconds:
 	.BYTE	4
+	.BYTE	2
 minsec:
 	.BYTE	6	; sec., min., hour
 
