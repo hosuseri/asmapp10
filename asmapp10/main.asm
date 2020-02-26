@@ -158,10 +158,10 @@ coroutine0_1:
 ;;;
 coroutine1:
 	cli
-coroutine1_1:
 	ldd	r8, z+10
 	ldd	r9, z+11
 	ldd	r10, z+12
+	sei
 	;;
 	ldi	r16, 60
 	mov	r4, r16
@@ -201,8 +201,8 @@ coroutine1_1:
 	;;
 	push	r31
 	push	r30
-	ldi	r30, LOW(coroutine1_1)
-	ldi	r31, HIGH(coroutine1_1)
+	ldi	r30, LOW(coroutine1)
+	ldi	r31, HIGH(coroutine1)
 	push	r31
 	push	r30
 	ldi	r30, LOW(context1)
@@ -213,7 +213,7 @@ coroutine1_1:
 	jmp	restore_context
 ;;; 
 coroutine2:
-	cli
+	sei
 	ldi	r24, 8
 coroutine2_1:	
 	ld	r16, z
